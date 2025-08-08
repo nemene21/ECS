@@ -10,6 +10,7 @@ USING_COMPONENT(Move);
 
 const int SCREEN_WIDTH = 960, SCREEN_HEIGHT = 540;
 int main() {
+  printf("Program is running...\n");
   ecsInit(7 MB);
   Scene scene;
   sceneInit(&scene);
