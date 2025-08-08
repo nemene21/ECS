@@ -86,17 +86,15 @@ void _queryRequire(ECSQuery *query, ComponentID component_id);
 #define queryRequire(queryPtr, CompType) _queryRequire(queryPtr, CompType##ID)
 
 #define queryForeach(queryPtr, entity_out, ...) \
-  printf("New query\n"); \
   for (i64 i = 0; i < (queryPtr)->scene->type_count; i++) { \
     Archetype *type = (queryPtr)->scene->types + i; \
     \
     if (bitmaskContains(&type->component_mask, &(queryPtr)->mask)) { \
       for (u64 j = 0; j < type->size; j++) { \
         EntityID entity_out = type->entities[j]; \
-        printf("ID %li, INDEX %li, SIZE %li\n", entity_out, j, type->size); \
         __VA_ARGS__ \
         /* Entity changed archetype, compensate */ \
-        if ((queryPtr)->scene->entity_type[entity_out] != type) { printf("death\n"); j--; } \
+        if ((queryPtr)->scene->entity_type[entity_out] != type) { j--; } \
       } \
     } \
   }

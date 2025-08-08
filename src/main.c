@@ -16,7 +16,7 @@ int main() {
   sceneInit(&scene);
   setCurrentScene(&scene);
 
-  for (u32 i = 0; i < 100; i++) {
+  for (u32 i = 0; i < 10000; i++) {
     EntityID ent = newEntity();
     addComponent(ent, Position);
     setComponent(ent, Position, {
@@ -59,14 +59,13 @@ int main() {
       pos->x += move->x * delta;
       pos->y += move->y * delta;
 
-
       if (pos->x < 0 || pos->x > SCREEN_WIDTH) {
         move->x *= -1;
-        pos->x += move->x * delta * 2;
+        pos->x += move->x * delta;
       }
-      if (pos->y < 0 || pos->y > SCREEN_WIDTH) {
+      if (pos->y < 0 || pos->y > SCREEN_HEIGHT) {
         move->y *= -1;
-        pos->y += move->y * delta * 2;
+        pos->y += move->y * delta;
       }
     });
     

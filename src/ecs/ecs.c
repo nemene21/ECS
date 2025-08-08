@@ -85,6 +85,7 @@ static void archetypeRemoveEntity(Archetype *type, EntityID entity) {
   // Overwrite all data by last entity and decrement type->size
   u32 to_index = type->entity_index[entity];
   u32 from_index = type->size - 1; // Last entity
+  EntityID from_entity = type->entities[from_index];
 
   // Last entity, no need for moving memory
   if (to_index == from_index) {
@@ -104,6 +105,7 @@ static void archetypeRemoveEntity(Archetype *type, EntityID entity) {
       component_size);
   }
   type->entities[to_index] = type->entities[from_index];
+  type->entity_index[from_entity] = to_index;
   type->size--;
 }
 
