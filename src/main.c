@@ -5,18 +5,20 @@
 typedef struct {
   float x, y;
 } Position, Move;
+
 USING_COMPONENT(Position);
 USING_COMPONENT(Move);
+USING_COMPONENT(Color);
 
 const int SCREEN_WIDTH = 960, SCREEN_HEIGHT = 540;
 int main() {
   printf("Program is running...\n");
-  ecsInit(7 MB);
+  ecsInit(20 MB);
   Scene scene;
   sceneInit(&scene);
   setCurrentScene(&scene);
 
-  for (u32 i = 0; i < 10000; i++) {
+  for (u32 i = 0; i < 100000; i++) {
     EntityID ent = newEntity();
     addComponent(ent, Position);
     setComponent(ent, Position, {
@@ -29,11 +31,15 @@ int main() {
       .x = GetRandomValue(-100, 100),
       .y = GetRandomValue(-100, 100)
     });
+
+    addComponent(ent, Color);
+    setComponent(ent, Color, (Color){GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255});
   }
 
   ECSQuery position_query;
   queryInit(&position_query);
   queryRequire(&position_query, Position);
+  queryRequire(&position_query, Color);
 
   ECSQuery move_sys_query;
   queryInit(&move_sys_query);
@@ -72,7 +78,8 @@ int main() {
     // Draw sys
     queryForeach(&position_query, entity, {
       Position *pos = getComponent(entity, Position);
-      DrawPixel(pos->x, pos->y, WHITE);
+      Color *col = getComponent(entity, Color);
+      DrawPixel(pos->x, pos->y, *col);
     });
     
     Vector2 mouse_pos = GetMousePosition();
