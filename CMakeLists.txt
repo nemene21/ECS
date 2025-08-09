@@ -11,4 +11,4 @@ include_directories(App "src/" "include/")
 
 target_link_libraries(App PRIVATE raylib)
 
-target_compile_options(App PRIVATE -Wall -Wextra -O1 -g)
+target_compile_options(App PRIVATE -Wall -Wextra -O2 -g)

@@ -11,87 +11,101 @@ USING_COMPONENT(Move);
 USING_COMPONENT(Color);
 
 const int SCREEN_WIDTH = 960, SCREEN_HEIGHT = 540;
+
+EntityID newDot(float x, float y) {
+  EntityID entity = newEntity();
+  addComponent(entity, Position);
+  setComponent(entity, Position, {
+      .x = x, .y = y});
+
+  addComponent(entity, Color);
+  setComponent(entity, Color, {
+    GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255});
+
+  addComponent(entity, Move);
+  setComponent(entity, Move, {
+      .x = GetRandomValue(-100, 100), .y = GetRandomValue(-100, 100)});
+  
+  return entity;
+}
+
+ECSQuery draw_query;
+ECSSystem draw_system;
+
+void drawSystemStep() {
+  Position *pos = getComponentArray(Position);
+  Color *col = getComponentArray(Color);
+  
+  for (u64 i = 0; i < getEntityArraySize(); i++) {
+    DrawPixel(pos[i].x, pos[i].y, col[i]);
+  }
+}
+
+void drawSystemInit() {
+  queryInit(&draw_query);
+  queryRequire(&draw_query, Position);
+  queryRequire(&draw_query, Color);
+
+  draw_system = (ECSSystem) {
+    .query = &draw_query,
+    .begin = NULL,
+    .step = drawSystemStep
+  };
+}
+
+ECSQuery move_query;
+ECSSystem move_system;
+
+void moveSystemStep() {
+  float delta = GetFrameTime();
+
+  Position *pos = getComponentArray(Position);
+  Move *move = getComponentArray(Move);
+  
+  for (u64 i = 0; i < getEntityArraySize(); i++) {
+    pos[i].x += move[i].x * delta;
+    pos[i].y += move[i].y * delta;
+  }
+}
+
+void moveSystemInit() {
+  queryInit(&move_query);
+  queryRequire(&move_query, Position);
+  queryRequire(&move_query, Move);
+
+  move_system = (ECSSystem) {
+    .query = &move_query,
+    .begin = NULL,
+    .step = moveSystemStep
+  };
+}
+
 int main() {
-  printf("Program is running...\n");
   ecsInit(20 MB);
   Scene scene;
   sceneInit(&scene);
   setCurrentScene(&scene);
 
-  for (u32 i = 0; i < 100000; i++) {
-    EntityID ent = newEntity();
-    addComponent(ent, Position);
-    setComponent(ent, Position, {
-      .x = GetRandomValue(0, SCREEN_WIDTH),
-      .y = GetRandomValue(0, SCREEN_HEIGHT)
-    });
-
-    addComponent(ent, Move);
-    setComponent(ent, Move, {
-      .x = GetRandomValue(-100, 100),
-      .y = GetRandomValue(-100, 100)
-    });
-
-    addComponent(ent, Color);
-    setComponent(ent, Color, (Color){GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255});
-  }
-
-  ECSQuery position_query;
-  queryInit(&position_query);
-  queryRequire(&position_query, Position);
-  queryRequire(&position_query, Color);
-
-  ECSQuery move_sys_query;
-  queryInit(&move_sys_query);
-  queryRequire(&move_sys_query, Position);
-  queryRequire(&move_sys_query, Move);
-
   InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "cirkul!");
+  drawSystemInit();
+  moveSystemInit();
+
+  for (u64 i = 0; i < 1000; i++) {
+    newDot(GetRandomValue(0, SCREEN_WIDTH), GetRandomValue(0, SCREEN_HEIGHT));
+  }
 
   SetTargetFPS(60);
   while (!WindowShouldClose()) {
     BeginDrawing();
     ClearBackground(BLACK);
 
-    float delta = GetFrameTime();
-
     char fps_buff[16];
     sprintf(fps_buff, "%i", GetFPS());
     SetWindowTitle(fps_buff);
-     
-    queryForeach(&move_sys_query, entity, {
-      Position *pos = getComponent(entity, Position);
-      Move *move = getComponent(entity, Move);
-      pos->x += move->x * delta;
-      pos->y += move->y * delta;
 
-      if (pos->x < 0 || pos->x > SCREEN_WIDTH) {
-        move->x *= -1;
-        pos->x += move->x * delta;
-      }
-      if (pos->y < 0 || pos->y > SCREEN_HEIGHT) {
-        move->y *= -1;
-        pos->y += move->y * delta;
-      }
-    });
-    
-    // Draw sys
-    queryForeach(&position_query, entity, {
-      Position *pos = getComponent(entity, Position);
-      Color *col = getComponent(entity, Color);
-      DrawPixel(pos->x, pos->y, *col);
-    });
-    
-    Vector2 mouse_pos = GetMousePosition();
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-      queryForeach(&position_query, entity, {
-        Position *pos = getComponent(entity, Position);
-        if (Vector2Distance((Vector2) {pos->x, pos->y}, mouse_pos) < 32) {
-          killEntity(entity);
-        }
-      });
-    }
-    
+    runSystem(&draw_system);
+    runSystem(&move_system);
+
     EndDrawing();
   }
 

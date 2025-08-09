@@ -5,7 +5,7 @@
 #define MAX_ARCHETYPES 256
 #define MAX_COMPONENTS 128
 #define MAX_ENTITIES 100000
-#define MAX_FREE_IDS 1024
+#define MAX_FREE_IDS 10000
 
 
 typedef u32 EntityID;
@@ -74,30 +74,30 @@ void sceneInit(Scene *scene);
 void setCurrentScene(Scene *to);
 Scene *getCurrentScene();
 
-// Queries
+// Queries and systems
 typedef struct {
   Bitmask mask;
   Scene *scene;
 } ECSQuery;
+
+typedef struct {
+  ECSQuery *query;
+  void (*begin)();
+  void (*step)();
+} ECSSystem;
 
 void queryInit(ECSQuery *query);
 void _queryRequire(ECSQuery *query, ComponentID component_id);
 
 #define queryRequire(queryPtr, CompType) _queryRequire(queryPtr, CompType##ID)
 
-#define queryForeach(queryPtr, entity_out, ...) \
-  for (i64 i = 0; i < (queryPtr)->scene->type_count; i++) { \
-    Archetype *type = (queryPtr)->scene->types + i; \
-    \
-    if (bitmaskContains(&type->component_mask, &(queryPtr)->mask)) { \
-      for (u64 j = 0; j < type->size; j++) { \
-        EntityID entity_out = type->entities[j]; \
-        __VA_ARGS__ \
-        /* Entity changed archetype, compensate */ \
-        if ((queryPtr)->scene->entity_type[entity_out] != type) { j--; } \
-      } \
-    } \
-  }
+Archetype *getCurrentArchetype();
+void *_getComponentArray(ComponentID id);
+#define getComponentArray(CompType) (CompType*)_getComponentArray(CompType##ID)
+u32 getEntityArraySize();
+EntityID *getEntityArray();
+
+void runSystem(ECSSystem *sys);
 
 // Init/deinit
 void ecsInit(size_t arena_byte_size);
